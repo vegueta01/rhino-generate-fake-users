@@ -1,17 +1,14 @@
+from fastapi import FastAPI
+from typing import List
 import random
 import json
-from typing import Optional
-from fastapi import FastAPI, Query
-from faker import Faker
 import pandas as pd
+from faker import Faker
 
 app = FastAPI()
 fake = Faker()
-
-# Ejemplos de idiomas
 languages = ['en', 'es', 'fr', 'de', 'it', 'jp', 'kr', 'cn', 'ru', 'pt']
 
-# Generador para el campo custom
 def generate_custom_field():
     base_keys = [
         ("nivel", lambda: random.randint(1, 100)),
@@ -20,7 +17,7 @@ def generate_custom_field():
         ("inventario", lambda: random.sample(["espada", "escudo", "poción", "llave", "oro"], k=random.randint(1, 4))),
         ("aliado", lambda: fake.first_name() if random.random() > 0.5 else None),
         ("misiones_completadas", lambda: random.randint(0, 50)),
-        ("atributos", lambda: {"fuerza": random.randint(1, 10), "agilidad": round(random.uniform(1.0, 10.0), 2)}),
+        ("atributos", lambda: {"fuerza": random.randint(1, 10), "agilidad": random.uniform(1.0, 10.0)}),
         ("comentario", lambda: fake.sentence(nb_words=6)),
         ("puntos", lambda: random.choice([None, random.randint(0, 1000)])),
         ("historial", lambda: [{"fecha": fake.date(), "evento": fake.word()} for _ in range(random.randint(1, 3))])
@@ -28,8 +25,7 @@ def generate_custom_field():
     keys_to_include = random.sample(base_keys, k=random.randint(2, 6))
     return {key: generator() for key, generator in keys_to_include}
 
-# Generador principal
-def generate_user_records(n: int):
+def generate_user_records(n=1000):
     records = []
     for _ in range(n):
         name = fake.first_name()
@@ -46,17 +42,10 @@ def generate_user_records(n: int):
             "telephone": telephone,
             "email": email,
             "username": username,
-            "custom": json.dumps(custom, ensure_ascii=False)
+            "custom": custom
         })
     return records
 
-# Endpoint
 @app.get("/fake-data")
-def get_fake_data(count: Optional[int] = Query(default=1000, ge=1, le=10000)):
-    """
-    Genera datos falsos con estructura avanzada.
-    Puedes pasar el parámetro ?count=1000 para definir cuántos registros retornar.
-    """
-    users = generate_user_records(count)
-    df = pd.DataFrame(users)
-    return df.to_dict(orient="records")
+def get_fake_data(count: int = 1000) -> List[dict]:
+    return generate_user_records(count)
