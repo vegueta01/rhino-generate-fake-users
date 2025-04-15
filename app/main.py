@@ -27,26 +27,31 @@ def generate_custom_field():
 
 def generate_full_name():
     """Genera un nombre compuesto con probabilidad"""
-    if random.random() < 0.3:  # 30% probabilidad de tener nombre compuesto
-        return f"{fake.first_name()} {fake.first_name()}"
-    return fake.first_name()
+    num_names = random.choices([1, 2, 3], weights=[0.6, 0.35, 0.05], k=1)[0]
+    names = [fake.first_name() for _ in range(num_names)]
+    return " ".join(names)
 
 def generate_full_surname():
     """Genera apellidos compuestos con probabilidad según diferentes tradiciones"""
-    # Diferentes tradiciones de apellidos
-    styles = [
-        # Estilo español/latinoamericano (dos apellidos)
-        lambda: f"{fake.last_name()} {fake.last_name()}",
+    # Probabilidad para la cantidad de apellidos
+    num_surnames = random.choices([1, 2, 3, 4], weights=[0.55, 0.35, 0.08, 0.02], k=1)[0]
+    
+    # Diferentes tipos de apellidos
+    surname_types = [
         # Apellido simple
         lambda: fake.last_name(),
-        # Apellido compuesto con guión (estilo anglosajón)
-        lambda: f"{fake.last_name()}-{fake.last_name()}",
         # Apellido con partícula (von, de, van, etc.)
         lambda: f"{random.choice(['de', 'van', 'von', 'di', 'del', 'de la', 'dos'])} {fake.last_name()}"
     ]
     
-    weights = [0.4, 0.3, 0.2, 0.1]  # Probabilidades para cada estilo
-    return random.choices(styles, weights=weights, k=1)[0]()
+    # Generar la cantidad de apellidos determinada
+    surnames = []
+    for _ in range(num_surnames):
+        # 85% apellidos simples, 15% con partícula
+        surname_func = random.choices(surname_types, weights=[0.85, 0.15], k=1)[0]
+        surnames.append(surname_func())
+    
+    return " ".join(surnames)
 
 def generate_user_records(n=1000):
     records = []
@@ -57,8 +62,13 @@ def generate_user_records(n=1000):
         telephone = fake.msisdn()[0:9]
         
         # Normalizar nombre y apellido para el email (eliminar espacios y caracteres especiales)
-        email_name = name.lower().replace(" ", "").replace("-", "")
-        email_surname = surname.lower().replace(" ", "").replace("-", "").replace("de la ", "").replace("del ", "").replace("van ", "").replace("von ", "").replace("di ", "").replace("dos ", "")
+        email_name = name.lower().replace(" ", "")
+        email_surname = surname.lower().replace(" ", "").replace("de la ", "").replace("del ", "").replace("van ", "").replace("von ", "").replace("di ", "").replace("dos ", "")
+        
+        # Asegurarse de que el email no sea demasiado largo
+        if len(email_name) + len(email_surname) > 20:
+            # Si es muy largo, acortar el apellido
+            email_surname = email_surname[:10]
         
         email = f"{email_name}.{email_surname}@{fake.free_email_domain()}"
         username = f"{email_name}{random.randint(1, 999)}"
